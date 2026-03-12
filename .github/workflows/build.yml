@@ -29,9 +29,18 @@ jobs:
         working-directory: standalones
         shell: cmd
         run: |
-          echo test_id > smoke_ids.txt
-          echo 3 | dist\move_anomalie.exe "%cd%\smoke_ids.txt"
-          if %errorlevel% neq 0 exit /b %errorlevel%
+          mkdir dist\subdir
+          echo. > "dist\IMG_ABC123.jpg"
+          echo. > "dist\IMG_ABC123.tif"
+          echo. > "dist\subdir\IMG_ABC123.cr2"
+          echo. > "dist\IMG_OTHER.jpg"
+          echo IMG_ABC123 | ANOMALIA > dist\anomalie.txt
+          (echo 2 & echo s) | dist\move_anomalie.exe
+          if not exist "dist\Anomalie\IMG_ABC123.jpg"       (echo FAIL: jpg not moved      && exit /b 1)
+          if not exist "dist\Anomalie\IMG_ABC123.tif"       (echo FAIL: tif not moved      && exit /b 1)
+          if not exist "dist\Anomalie\subdir\IMG_ABC123.cr2"(echo FAIL: subdir not moved   && exit /b 1)
+          if not exist "dist\IMG_OTHER.jpg"                 (echo FAIL: other file missing && exit /b 1)
+          echo Smoke test passed.
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -60,8 +69,18 @@ jobs:
       - name: Smoke test binary
         working-directory: standalones
         run: |
-          echo "test_id" > smoke_ids.txt
-          echo "3" | ./dist/move_anomalie "$(pwd)/smoke_ids.txt"
+          mkdir -p dist/subdir
+          touch dist/IMG_ABC123.jpg
+          touch dist/IMG_ABC123.tif
+          touch dist/subdir/IMG_ABC123.cr2
+          touch dist/IMG_OTHER.jpg
+          echo "IMG_ABC123 | ANOMALIA" > dist/anomalie.txt
+          printf "2\ns\n" | ./dist/move_anomalie
+          test -f dist/Anomalie/IMG_ABC123.jpg        || (echo "FAIL: jpg not moved"      && exit 1)
+          test -f dist/Anomalie/IMG_ABC123.tif        || (echo "FAIL: tif not moved"      && exit 1)
+          test -f dist/Anomalie/subdir/IMG_ABC123.cr2 || (echo "FAIL: subdir not moved"   && exit 1)
+          test -f dist/IMG_OTHER.jpg                  || (echo "FAIL: other file missing" && exit 1)
+          echo "Smoke test passed."
 
       - name: Zip macOS binary
         run: zip -j standalones/dist/move_anomalie-macos.zip standalones/dist/move_anomalie
