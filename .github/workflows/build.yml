@@ -35,12 +35,17 @@ jobs:
           echo. > "dist\subdir\IMG_ABC123.cr2"
           echo. > "dist\IMG_OTHER.jpg"
           echo IMG_ABC123 ^| ANOMALIA > dist\anomalie.txt
-          (echo 2 & echo s) | dist\move_anomalie.exe
-          if not exist "dist\Anomalie\IMG_ABC123.jpg"       (echo FAIL: jpg not moved      && exit /b 1)
-          if not exist "dist\Anomalie\IMG_ABC123.tif"       (echo FAIL: tif not moved      && exit /b 1)
-          if not exist "dist\Anomalie\subdir\IMG_ABC123.cr2"(echo FAIL: subdir not moved   && exit /b 1)
-          if not exist "dist\IMG_OTHER.jpg"                 (echo FAIL: other file missing && exit /b 1)
+          (echo 2 & echo s & echo. & echo 3) | dist\move_anomalie.exe
+          if not exist "dist\Anomalie\IMG_ABC123.jpg"        goto fail
+          if not exist "dist\Anomalie\IMG_ABC123.tif"        goto fail
+          if not exist "dist\Anomalie\subdir\IMG_ABC123.cr2" goto fail
+          if not exist "dist\IMG_OTHER.jpg"                  goto fail
           echo Smoke test passed.
+          goto end
+          :fail
+          echo Smoke test failed.
+          exit /b 1
+          :end
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -75,7 +80,7 @@ jobs:
           touch dist/subdir/IMG_ABC123.cr2
           touch dist/IMG_OTHER.jpg
           echo "IMG_ABC123 | ANOMALIA" > dist/anomalie.txt
-          printf "2\ns\n" | ./dist/move_anomalie
+          printf "2\ns\n\n3\n" | ./dist/move_anomalie
           test -f dist/Anomalie/IMG_ABC123.jpg        || (echo "FAIL: jpg not moved"      && exit 1)
           test -f dist/Anomalie/IMG_ABC123.tif        || (echo "FAIL: tif not moved"      && exit 1)
           test -f dist/Anomalie/subdir/IMG_ABC123.cr2 || (echo "FAIL: subdir not moved"   && exit 1)
