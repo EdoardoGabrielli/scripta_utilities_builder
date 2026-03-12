@@ -1,0 +1,101 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    name: Build Windows .exe
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build dependencies
+        run: pip install -r standalones/requirements-build.txt
+
+      - name: Build executable
+        working-directory: standalones
+        run: pyinstaller move_anomalie.spec --distpath dist --workpath build/work --noconfirm
+
+      - name: Smoke test executable
+        working-directory: standalones
+        shell: cmd
+        run: |
+          echo test_id > smoke_ids.txt
+          echo 3 | dist\move_anomalie.exe smoke_ids.txt
+          if %errorlevel% neq 0 exit /b %errorlevel%
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: move_anomalie-windows
+          path: standalones/dist/move_anomalie.exe
+
+  build-macos:
+    name: Build macOS binary
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build dependencies
+        run: pip install -r standalones/requirements-build.txt
+
+      - name: Build binary
+        working-directory: standalones
+        run: pyinstaller move_anomalie.spec --distpath dist --workpath build/work --noconfirm
+
+      - name: Smoke test binary
+        working-directory: standalones
+        run: |
+          echo "test_id" > smoke_ids.txt
+          echo "3" | ./dist/move_anomalie smoke_ids.txt
+
+      - name: Zip macOS binary
+        run: zip -j standalones/dist/move_anomalie-macos.zip standalones/dist/move_anomalie
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: move_anomalie-macos
+          path: standalones/dist/move_anomalie-macos.zip
+
+  release:
+    name: Create GitHub Release
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: move_anomalie-windows
+          path: dist/
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: move_anomalie-macos
+          path: dist/
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/move_anomalie.exe
+            dist/move_anomalie-macos.zip
+          generate_release_notes: true
