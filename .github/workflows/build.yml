@@ -34,7 +34,7 @@ jobs:
           echo. > "dist\IMG_ABC123.tif"
           echo. > "dist\subdir\IMG_ABC123.cr2"
           echo. > "dist\IMG_OTHER.jpg"
-          echo IMG_ABC123 | ANOMALIA > dist\anomalie.txt
+          echo IMG_ABC123 ^| ANOMALIA > dist\anomalie.txt
           (echo 2 & echo s) | dist\move_anomalie.exe
           if not exist "dist\Anomalie\IMG_ABC123.jpg"       (echo FAIL: jpg not moved      && exit /b 1)
           if not exist "dist\Anomalie\IMG_ABC123.tif"       (echo FAIL: tif not moved      && exit /b 1)
