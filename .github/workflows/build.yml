@@ -28,30 +28,17 @@ jobs:
       - name: Smoke test executable
         working-directory: standalones
         shell: cmd
-        run: |
-          mkdir dist\subdir
-          echo. > "dist\IMG_ABC123.jpg"
-          echo. > "dist\IMG_ABC123.tif"
-          echo. > "dist\subdir\IMG_ABC123.cr2"
-          echo. > "dist\IMG_OTHER.jpg"
-          echo IMG_ABC123 ^| ANOMALIA > dist\anomalie.txt
-          (echo 2 & echo s & echo. & echo 3) | dist\move_anomalie.exe
-          if not exist "dist\Anomalie\IMG_ABC123.jpg"        goto fail
-          if not exist "dist\Anomalie\IMG_ABC123.tif"        goto fail
-          if not exist "dist\Anomalie\subdir\IMG_ABC123.cr2" goto fail
-          if not exist "dist\IMG_OTHER.jpg"                  goto fail
-          echo Smoke test passed.
-          goto end
-          :fail
-          echo Smoke test failed.
-          exit /b 1
-          :end
+        run: smoke_test.bat dist\move_anomalie.exe
+
+      - name: Zip Windows executable
+        run: Compress-Archive -Path standalones\dist\move_anomalie.exe -DestinationPath standalones\dist\move_anomalie-windows.zip
+        shell: pwsh
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: move_anomalie-windows
-          path: standalones/dist/move_anomalie.exe
+          path: standalones/dist/move_anomalie-windows.zip
 
   build-macos:
     name: Build macOS binary
@@ -73,19 +60,7 @@ jobs:
 
       - name: Smoke test binary
         working-directory: standalones
-        run: |
-          mkdir -p dist/subdir
-          touch dist/IMG_ABC123.jpg
-          touch dist/IMG_ABC123.tif
-          touch dist/subdir/IMG_ABC123.cr2
-          touch dist/IMG_OTHER.jpg
-          echo "IMG_ABC123 | ANOMALIA" > dist/anomalie.txt
-          printf "2\ns\n\n3\n" | ./dist/move_anomalie
-          test -f dist/Anomalie/IMG_ABC123.jpg        || (echo "FAIL: jpg not moved"      && exit 1)
-          test -f dist/Anomalie/IMG_ABC123.tif        || (echo "FAIL: tif not moved"      && exit 1)
-          test -f dist/Anomalie/subdir/IMG_ABC123.cr2 || (echo "FAIL: subdir not moved"   && exit 1)
-          test -f dist/IMG_OTHER.jpg                  || (echo "FAIL: other file missing" && exit 1)
-          echo "Smoke test passed."
+        run: bash smoke_test.sh dist/move_anomalie
 
       - name: Zip macOS binary
         run: zip -j standalones/dist/move_anomalie-macos.zip standalones/dist/move_anomalie
@@ -120,6 +95,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/move_anomalie.exe
+            dist/move_anomalie-windows.zip
             dist/move_anomalie-macos.zip
           generate_release_notes: true
