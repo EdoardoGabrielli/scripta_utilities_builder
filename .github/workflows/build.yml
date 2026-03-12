@@ -30,7 +30,7 @@ jobs:
         shell: cmd
         run: |
           echo test_id > smoke_ids.txt
-          echo 3 | dist\move_anomalie.exe smoke_ids.txt
+          echo 3 | dist\move_anomalie.exe "%cd%\smoke_ids.txt"
           if %errorlevel% neq 0 exit /b %errorlevel%
 
       - name: Upload Windows artifact
@@ -61,7 +61,7 @@ jobs:
         working-directory: standalones
         run: |
           echo "test_id" > smoke_ids.txt
-          echo "3" | ./dist/move_anomalie smoke_ids.txt
+          echo "3" | ./dist/move_anomalie "$(pwd)/smoke_ids.txt"
 
       - name: Zip macOS binary
         run: zip -j standalones/dist/move_anomalie-macos.zip standalones/dist/move_anomalie
